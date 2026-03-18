@@ -1,0 +1,1202 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StreamFire IPTV</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Exo+2:wght@300;400;600;700;900&family=Rajdhani:wght@400;600;700&display=swap');
+
+  :root {
+    --bg: #090d14;
+    --bg2: #0e1420;
+    --bg3: #141c2b;
+    --card: #111827;
+    --card2: #1a2336;
+    --accent: #00d4ff;
+    --accent2: #ff6b35;
+    --accent3: #7c3aed;
+    --text: #e8edf5;
+    --text2: #8b9ab5;
+    --border: #1e2d45;
+    --green: #00e676;
+    --red: #ff1744;
+    --gold: #ffd600;
+    --glow: 0 0 20px rgba(0,212,255,0.3);
+    --glow2: 0 0 30px rgba(0,212,255,0.15);
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Exo 2', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── BACKGROUND GRID ── */
+  body::before {
+    content:'';
+    position:fixed;
+    inset:0;
+    background:
+      linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events:none;
+    z-index:0;
+  }
+
+  /* ── HEADER ── */
+  header {
+    position: sticky; top:0; z-index:100;
+    background: rgba(9,13,20,0.95);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border);
+    padding: 0 24px;
+    height: 64px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+
+  .logo {
+    display: flex; align-items: center; gap: 10px;
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 1.8rem; font-weight: 700;
+    letter-spacing: 2px;
+  }
+  .logo-icon {
+    width: 36px; height: 36px;
+    background: linear-gradient(135deg, var(--accent), var(--accent3));
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.1rem;
+    box-shadow: var(--glow);
+  }
+  .logo span { color: var(--accent); }
+
+  .header-actions { display:flex; gap:10px; align-items:center; }
+
+  .btn {
+    padding: 8px 18px;
+    border-radius: 8px;
+    border: none; cursor: pointer;
+    font-family: 'Exo 2', sans-serif;
+    font-weight: 600; font-size: 0.85rem;
+    transition: all 0.2s;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .btn-primary {
+    background: linear-gradient(135deg, var(--accent), #0095b3);
+    color: #000;
+    box-shadow: 0 0 15px rgba(0,212,255,0.4);
+  }
+  .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 0 25px rgba(0,212,255,0.6); }
+  .btn-secondary {
+    background: var(--card2); color: var(--text);
+    border: 1px solid var(--border);
+  }
+  .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
+  .btn-danger { background: rgba(255,23,68,0.15); color: var(--red); border: 1px solid rgba(255,23,68,0.3); }
+  .btn-danger:hover { background: rgba(255,23,68,0.25); }
+  .btn-sm { padding: 5px 12px; font-size: 0.78rem; }
+
+  /* ── MAIN LAYOUT ── */
+  .app { position:relative; z-index:1; display:flex; height: calc(100vh - 64px); }
+
+  /* ── SIDEBAR ── */
+  .sidebar {
+    width: 280px; min-width: 280px;
+    background: var(--bg2);
+    border-right: 1px solid var(--border);
+    display: flex; flex-direction: column;
+    overflow: hidden;
+  }
+
+  .sidebar-tabs {
+    display: flex;
+    border-bottom: 1px solid var(--border);
+  }
+  .sidebar-tab {
+    flex:1; padding: 14px 8px;
+    background: none; border: none;
+    color: var(--text2); font-family: 'Exo 2', sans-serif;
+    font-size: 0.78rem; font-weight: 600;
+    cursor: pointer; transition: all 0.2s;
+    border-bottom: 2px solid transparent;
+    letter-spacing: 0.5px;
+  }
+  .sidebar-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  .sidebar-content { flex:1; overflow-y: auto; padding: 12px; }
+  .sidebar-content::-webkit-scrollbar { width: 4px; }
+  .sidebar-content::-webkit-scrollbar-track { background: transparent; }
+  .sidebar-content::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  /* ── CHANNEL LIST ── */
+  .channel-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.15s;
+    border: 1px solid transparent;
+    margin-bottom: 4px;
+    position: relative;
+  }
+  .channel-item:hover { background: var(--card2); border-color: var(--border); }
+  .channel-item.active { background: rgba(0,212,255,0.08); border-color: rgba(0,212,255,0.3); }
+
+  .channel-logo {
+    width: 42px; height: 42px; min-width: 42px;
+    border-radius: 6px;
+    background: var(--card2);
+    border: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.2rem; overflow: hidden;
+  }
+  .channel-logo img { width:100%; height:100%; object-fit: cover; border-radius: 5px; }
+
+  .channel-info { flex:1; min-width:0; }
+  .channel-name {
+    font-size: 0.85rem; font-weight: 600;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    color: var(--text);
+  }
+  .channel-item.active .channel-name { color: var(--accent); }
+  .channel-url {
+    font-size: 0.7rem; color: var(--text2);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    margin-top: 2px;
+  }
+
+  .channel-live {
+    display: flex; align-items: center; gap: 4px;
+    font-size: 0.65rem; font-weight: 700;
+    color: var(--green); letter-spacing: 1px;
+  }
+  .live-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--green);
+    animation: pulse 1.5s infinite;
+  }
+  @keyframes pulse {
+    0%,100% { opacity:1; transform: scale(1); }
+    50% { opacity:0.5; transform: scale(0.7); }
+  }
+
+  .channel-actions {
+    display: flex; gap:4px;
+    opacity: 0; transition: opacity 0.15s;
+  }
+  .channel-item:hover .channel-actions { opacity:1; }
+
+  .icon-btn {
+    width: 26px; height: 26px;
+    border-radius: 5px; border: none;
+    background: var(--bg3); color: var(--text2);
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    font-size: 0.75rem; transition: all 0.15s;
+  }
+  .icon-btn:hover { color: var(--red); background: rgba(255,23,68,0.1); }
+
+  /* ── ADD FORM ── */
+  .add-form { padding: 16px 12px; border-bottom: 1px solid var(--border); }
+  .add-form h3 {
+    font-size: 0.8rem; font-weight: 700;
+    color: var(--accent); letter-spacing: 1px;
+    text-transform: uppercase; margin-bottom: 12px;
+    display: flex; align-items: center; gap: 6px;
+  }
+
+  .form-group { margin-bottom: 10px; }
+  .form-group label {
+    display: block; font-size: 0.72rem;
+    color: var(--text2); margin-bottom: 4px; font-weight: 600;
+  }
+  .form-control {
+    width: 100%; padding: 9px 12px;
+    background: var(--bg3); border: 1px solid var(--border);
+    border-radius: 7px; color: var(--text);
+    font-family: 'Exo 2', sans-serif; font-size: 0.82rem;
+    transition: all 0.15s; outline: none;
+  }
+  .form-control:focus { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(0,212,255,0.1); }
+  .form-control::placeholder { color: var(--text2); }
+
+  .type-selector { display:flex; gap:6px; margin-bottom: 10px; }
+  .type-btn {
+    flex:1; padding: 7px;
+    background: var(--bg3); border: 1px solid var(--border);
+    border-radius: 6px; color: var(--text2);
+    font-family: 'Exo 2', sans-serif; font-size: 0.72rem;
+    font-weight: 600; cursor: pointer; transition: all 0.15s;
+    text-align: center;
+  }
+  .type-btn.active { background: rgba(0,212,255,0.1); border-color: var(--accent); color: var(--accent); }
+
+  /* ── PLAYER AREA ── */
+  .player-area {
+    flex:1; display:flex; flex-direction: column;
+    background: var(--bg); overflow: hidden;
+  }
+
+  .player-wrapper {
+    flex:1; position: relative;
+    background: #000;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  video#mainPlayer {
+    width:100%; height:100%;
+    object-fit: contain;
+    background: #000;
+  }
+
+  .player-overlay {
+    position: absolute; inset:0;
+    display: flex; align-items: center; justify-content: center;
+    flex-direction: column; gap: 16px;
+    background: radial-gradient(ellipse at center, rgba(0,212,255,0.03) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  .no-channel {
+    text-align:center;
+  }
+  .no-channel .big-icon {
+    font-size: 5rem; opacity: 0.15; display:block; margin-bottom: 16px;
+  }
+  .no-channel h2 {
+    font-size: 1.6rem; font-weight: 700;
+    color: var(--text2); margin-bottom: 8px;
+  }
+  .no-channel p { color: var(--text2); font-size:0.9rem; opacity:0.7; }
+
+  /* ── PLAYER CONTROLS ── */
+  .player-controls {
+    background: var(--bg2);
+    border-top: 1px solid var(--border);
+    padding: 12px 20px;
+    display: flex; align-items: center; gap: 16px;
+  }
+
+  .now-playing {
+    flex:1;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .now-playing-logo {
+    width: 44px; height: 44px;
+    border-radius: 8px;
+    background: var(--card2);
+    border: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.4rem;
+  }
+  .now-playing-info h4 { font-size: 0.9rem; font-weight: 700; }
+  .now-playing-info p { font-size: 0.75rem; color: var(--text2); margin-top: 2px; }
+
+  .controls-center {
+    display: flex; align-items: center; gap: 8px;
+  }
+
+  .ctrl-btn {
+    width: 42px; height: 42px;
+    border-radius: 50%; border: none;
+    background: var(--card2); color: var(--text);
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    font-size: 1rem; transition: all 0.2s;
+  }
+  .ctrl-btn:hover { background: var(--accent); color: #000; box-shadow: 0 0 12px rgba(0,212,255,0.4); }
+  .ctrl-btn.play-btn {
+    width: 52px; height: 52px;
+    font-size: 1.3rem;
+    background: linear-gradient(135deg, var(--accent), #0095b3);
+    color: #000;
+    box-shadow: 0 0 20px rgba(0,212,255,0.4);
+  }
+
+  .volume-slider {
+    display: flex; align-items: center; gap: 8px;
+  }
+  .volume-slider input[type=range] {
+    width: 80px; cursor: pointer;
+    accent-color: var(--accent);
+  }
+
+  .quality-badge {
+    padding: 4px 10px;
+    background: rgba(0,212,255,0.1);
+    border: 1px solid rgba(0,212,255,0.3);
+    border-radius: 4px;
+    font-size: 0.72rem; font-weight: 700;
+    color: var(--accent); letter-spacing: 1px;
+  }
+
+  .fullscreen-btn {
+    margin-left: auto;
+    background: var(--card2); border: 1px solid var(--border);
+    color: var(--text2); padding: 8px 14px;
+    border-radius: 7px; cursor: pointer;
+    font-size: 0.85rem; transition: all 0.15s;
+  }
+  .fullscreen-btn:hover { color: var(--accent); border-color: var(--accent); }
+
+  /* ── INFO PANEL ── */
+  .info-panel {
+    background: var(--bg2);
+    border-top: 1px solid var(--border);
+    padding: 10px 20px;
+    display: flex; align-items: center; gap: 20px;
+    font-size: 0.78rem;
+  }
+  .info-pill {
+    display: flex; align-items: center; gap: 6px;
+    padding: 4px 10px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    color: var(--text2);
+  }
+  .info-pill span { color: var(--text); font-weight: 600; }
+
+  /* ── MODAL ── */
+  .modal-overlay {
+    display: none;
+    position: fixed; inset:0; z-index:200;
+    background: rgba(0,0,0,0.8);
+    backdrop-filter: blur(8px);
+    align-items: center; justify-content: center;
+  }
+  .modal-overlay.show { display: flex; }
+
+  .modal {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 28px;
+    width: 480px; max-width: 95vw;
+    box-shadow: 0 0 60px rgba(0,0,0,0.8), 0 0 30px rgba(0,212,255,0.1);
+    animation: modalIn 0.2s ease;
+  }
+  @keyframes modalIn { from { opacity:0; transform: scale(0.95) translateY(10px); } }
+
+  .modal h2 {
+    font-size: 1.2rem; font-weight: 700; margin-bottom: 20px;
+    display: flex; align-items: center; gap: 10px;
+    color: var(--accent);
+  }
+
+  .modal-actions {
+    display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;
+  }
+
+  /* ── CATEGORY BADGE ── */
+  .cat-badge {
+    font-size: 0.65rem; font-weight: 700;
+    padding: 2px 6px; border-radius: 3px;
+    letter-spacing: 0.5px; text-transform: uppercase;
+  }
+  .cat-live { background: rgba(0,230,118,0.15); color: var(--green); }
+  .cat-movie { background: rgba(255,107,53,0.15); color: var(--accent2); }
+  .cat-sport { background: rgba(255,214,0,0.15); color: var(--gold); }
+  .cat-news { background: rgba(124,58,237,0.15); color: #a78bfa; }
+  .cat-general { background: rgba(0,212,255,0.1); color: var(--accent); }
+
+  /* ── SEARCH BAR ── */
+  .search-wrap {
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border);
+  }
+  .search-input {
+    width: 100%; padding: 8px 12px 8px 32px;
+    background: var(--bg3); border: 1px solid var(--border);
+    border-radius: 7px; color: var(--text);
+    font-family: 'Exo 2', sans-serif; font-size: 0.82rem;
+    outline: none; transition: all 0.15s;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='%238b9ab5' viewBox='0 0 24 24'%3E%3Cpath d='M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z' stroke='%238b9ab5' stroke-width='2' fill='none'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-size: 16px;
+    background-position: 10px center;
+  }
+  .search-input:focus { border-color: var(--accent); }
+  .search-input::placeholder { color: var(--text2); }
+
+  /* ── TOAST ── */
+  .toast {
+    position: fixed; bottom: 30px; right: 30px; z-index:300;
+    padding: 14px 20px;
+    background: var(--card2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    font-size: 0.85rem; font-weight: 600;
+    display: flex; align-items: center; gap: 10px;
+    transform: translateY(100px); opacity:0;
+    transition: all 0.3s;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+    max-width: 320px;
+  }
+  .toast.show { transform: translateY(0); opacity:1; }
+  .toast.success { border-color: rgba(0,230,118,0.4); }
+  .toast.error { border-color: rgba(255,23,68,0.4); }
+
+  /* ── LOADING ── */
+  .loading-spinner {
+    width: 50px; height: 50px;
+    border: 3px solid rgba(0,212,255,0.1);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .loading-overlay {
+    position:absolute; inset:0;
+    background: rgba(0,0,0,0.7);
+    display: none; align-items: center; justify-content: center;
+    flex-direction: column; gap: 14px; z-index:10;
+  }
+  .loading-overlay.show { display:flex; }
+  .loading-overlay p { color: var(--text2); font-size:0.85rem; }
+
+  /* ── M3U IMPORT ── */
+  .m3u-drop {
+    border: 2px dashed var(--border);
+    border-radius: 10px; padding: 24px;
+    text-align: center; cursor: pointer;
+    transition: all 0.2s; color: var(--text2);
+  }
+  .m3u-drop:hover, .m3u-drop.drag { border-color: var(--accent); color: var(--accent); background: rgba(0,212,255,0.04); }
+  .m3u-drop .drop-icon { font-size: 2.5rem; display:block; margin-bottom: 8px; }
+  .m3u-drop p { font-size:0.82rem; }
+
+  /* ── EMPTY STATE ── */
+  .empty-state {
+    text-align:center; padding: 40px 20px; color: var(--text2);
+  }
+  .empty-state .icon { font-size: 2.5rem; opacity:0.3; margin-bottom: 10px; }
+  .empty-state p { font-size:0.82rem; }
+
+  /* ── TABS CONTENT ── */
+  .tab-pane { display:none; }
+  .tab-pane.active { display:block; }
+
+  /* FireStick D-pad focus */
+  *:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  .section-label {
+    font-size: 0.68rem; font-weight: 700;
+    color: var(--text2); letter-spacing: 1.5px;
+    text-transform: uppercase;
+    padding: 8px 4px 4px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 6px;
+  }
+
+  /* Scrollable channel grid for large lists */
+  .channel-count {
+    font-size: 0.72rem; color: var(--text2);
+    padding: 6px 4px 2px;
+    display:flex; justify-content:space-between; align-items:center;
+  }
+
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="logo">
+    <div class="logo-icon">▶</div>
+    Stream<span>Fire</span>
+  </div>
+  <div class="header-actions">
+    <button class="btn btn-secondary" onclick="openModal('importModal')">📋 Importar M3U</button>
+    <button class="btn btn-primary" onclick="openModal('addModal')">＋ Agregar Canal</button>
+  </div>
+</header>
+
+<!-- MAIN -->
+<div class="app">
+
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="sidebar-tabs">
+      <button class="sidebar-tab active" onclick="switchTab('channels',this)">📺 Canales</button>
+      <button class="sidebar-tab" onclick="switchTab('playlists',this)">📋 Listas</button>
+      <button class="sidebar-tab" onclick="switchTab('settings',this)">⚙️ Ajustes</button>
+    </div>
+
+    <!-- CANALES TAB -->
+    <div id="tab-channels" class="tab-pane active" style="display:flex;flex-direction:column;flex:1;overflow:hidden;">
+      <div class="search-wrap">
+        <input class="search-input" type="text" id="searchInput" placeholder="Buscar canales..." oninput="filterChannels()">
+      </div>
+      <div class="sidebar-content" id="channelList">
+        <!-- Rendered by JS -->
+      </div>
+    </div>
+
+    <!-- PLAYLISTS TAB -->
+    <div id="tab-playlists" class="tab-pane" style="display:none;flex-direction:column;flex:1;overflow:hidden;">
+      <div class="add-form">
+        <h3>📋 Agregar Lista M3U</h3>
+        <div class="form-group">
+          <label>Nombre de la Lista</label>
+          <input class="form-control" id="plName" placeholder="Mi Lista IPTV">
+        </div>
+        <div class="form-group">
+          <label>URL del archivo .m3u / .m3u8</label>
+          <input class="form-control" id="plUrl" placeholder="http://servidor.com/lista.m3u">
+        </div>
+        <button class="btn btn-primary" style="width:100%" onclick="addPlaylist()">Cargar Lista</button>
+      </div>
+      <div class="sidebar-content" id="playlistList"></div>
+    </div>
+
+    <!-- SETTINGS TAB -->
+    <div id="tab-settings" class="tab-pane" style="display:none;padding:16px;">
+      <h3 style="font-size:0.8rem;color:var(--accent);letter-spacing:1px;text-transform:uppercase;margin-bottom:14px;">⚙️ Configuración</h3>
+      <div class="form-group">
+        <label style="font-size:0.72rem;color:var(--text2);margin-bottom:4px;display:block;">Calidad Preferida</label>
+        <select class="form-control" id="qualitySetting">
+          <option value="auto">Auto (Recomendado)</option>
+          <option value="1080p">1080p HD</option>
+          <option value="720p">720p HD</option>
+          <option value="480p">480p SD</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label style="font-size:0.72rem;color:var(--text2);margin-bottom:4px;display:block;">Buffer (segundos)</label>
+        <select class="form-control" id="bufferSetting">
+          <option value="3">3s (Bajo)</option>
+          <option value="5" selected>5s (Normal)</option>
+          <option value="10">10s (Alto)</option>
+          <option value="15">15s (Máximo)</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label style="font-size:0.72rem;color:var(--text2);margin-bottom:4px;display:block;">Tema</label>
+        <select class="form-control" id="themeSetting">
+          <option value="dark">Oscuro (FireStick)</option>
+          <option value="amoled">AMOLED Negro</option>
+        </select>
+      </div>
+      <button class="btn btn-danger" style="width:100%;margin-top:20px;" onclick="clearAll()">🗑️ Borrar Todos los Datos</button>
+    </div>
+  </div>
+
+  <!-- PLAYER -->
+  <div class="player-area">
+    <div class="player-wrapper" id="playerWrapper">
+      <video id="mainPlayer" controls style="display:none"></video>
+
+      <div class="player-overlay" id="playerOverlay">
+        <div class="no-channel">
+          <span class="big-icon">📺</span>
+          <h2>StreamFire IPTV</h2>
+          <p>Agrega un canal o importa una lista M3U<br>para comenzar a ver contenido</p>
+        </div>
+      </div>
+
+      <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-spinner"></div>
+        <p>Cargando stream...</p>
+      </div>
+    </div>
+
+    <!-- CONTROLS -->
+    <div class="player-controls" id="playerControls">
+      <div class="now-playing" id="nowPlayingInfo">
+        <div class="now-playing-logo" id="nowPlayingLogo">📺</div>
+        <div class="now-playing-info">
+          <h4 id="nowPlayingName">Sin reproducción</h4>
+          <p id="nowPlayingUrl">— Selecciona un canal —</p>
+        </div>
+      </div>
+
+      <div class="controls-center">
+        <button class="ctrl-btn" onclick="prevChannel()" title="Canal anterior">⏮</button>
+        <button class="ctrl-btn play-btn" id="playPauseBtn" onclick="togglePlay()">▶</button>
+        <button class="ctrl-btn" onclick="nextChannel()" title="Canal siguiente">⏭</button>
+      </div>
+
+      <div class="volume-slider">
+        <span style="font-size:0.9rem">🔊</span>
+        <input type="range" id="volumeSlider" min="0" max="1" step="0.05" value="1" oninput="setVolume(this.value)">
+      </div>
+
+      <div class="quality-badge" id="qualityBadge">HD</div>
+
+      <button class="fullscreen-btn" onclick="toggleFullscreen()">⛶ Pantalla completa</button>
+    </div>
+
+    <div class="info-panel" id="infoPanel">
+      <div class="info-pill">Estado: <span id="statusText" style="color:var(--text2)">Sin señal</span></div>
+      <div class="info-pill">Formato: <span id="formatText">—</span></div>
+      <div class="info-pill">Canales: <span id="channelCountText">0</span></div>
+      <div class="info-pill" id="liveBadge" style="display:none">
+        <span class="live-dot"></span><span style="color:var(--green)">EN VIVO</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ─── MODAL: AGREGAR CANAL ─── -->
+<div class="modal-overlay" id="addModal">
+  <div class="modal">
+    <h2>📺 Agregar Canal / Stream</h2>
+
+    <div class="type-selector">
+      <button class="type-btn active" onclick="setType('channel',this)">Canal</button>
+      <button class="type-btn" onclick="setType('stream',this)">Stream URL</button>
+      <button class="type-btn" onclick="setType('network',this)">Red Local</button>
+    </div>
+
+    <div class="form-group">
+      <label>Nombre del Canal *</label>
+      <input class="form-control" id="addName" placeholder="Ej: ESPN HD">
+    </div>
+    <div class="form-group">
+      <label>URL del Stream *</label>
+      <input class="form-control" id="addUrl" placeholder="http:// o rtmp:// o rtsp:// o udp://">
+    </div>
+    <div class="form-group">
+      <label>URL Logo (opcional)</label>
+      <input class="form-control" id="addLogo" placeholder="https://logo.png">
+    </div>
+    <div class="form-group">
+      <label>Categoría</label>
+      <select class="form-control" id="addCat">
+        <option value="general">General</option>
+        <option value="live">En Vivo</option>
+        <option value="sport">Deportes</option>
+        <option value="movie">Películas</option>
+        <option value="news">Noticias</option>
+      </select>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal('addModal')">Cancelar</button>
+      <button class="btn btn-primary" onclick="addChannel()">＋ Agregar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ─── MODAL: IMPORTAR M3U ─── -->
+<div class="modal-overlay" id="importModal">
+  <div class="modal">
+    <h2>📋 Importar Lista M3U / M3U8</h2>
+    <div class="form-group">
+      <label>URL de la Lista M3U</label>
+      <input class="form-control" id="importUrl" placeholder="http://servidor.com/lista.m3u8">
+    </div>
+    <p style="font-size:0.78rem;color:var(--text2);margin:10px 0;">— O pega el contenido M3U directamente —</p>
+    <div class="form-group">
+      <textarea class="form-control" id="importText" rows="5" placeholder="#EXTM3U&#10;#EXTINF:-1 tvg-name=&quot;Canal&quot;,Canal HD&#10;http://url.del.stream/live"></textarea>
+    </div>
+
+    <div class="m3u-drop" id="dropZone" ondragover="event.preventDefault();this.classList.add('drag')" ondragleave="this.classList.remove('drag')" ondrop="handleDrop(event)">
+      <span class="drop-icon">📁</span>
+      <p>Arrastra un archivo .m3u / .m3u8 aquí<br><small>o haz clic para seleccionar</small></p>
+      <input type="file" id="fileInput" accept=".m3u,.m3u8,.txt" style="display:none" onchange="handleFile(event)">
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal('importModal')">Cancelar</button>
+      <button class="btn btn-secondary" onclick="document.getElementById('fileInput').click()">📁 Archivo</button>
+      <button class="btn btn-primary" onclick="importM3U()">Importar</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ═══════════════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════════════
+let channels = JSON.parse(localStorage.getItem('sf_channels') || '[]');
+let playlists = JSON.parse(localStorage.getItem('sf_playlists') || '[]');
+let currentIndex = -1;
+let currentType = 'channel';
+let hlsInstance = null;
+
+// Default sample channels
+if (channels.length === 0) {
+  channels = [
+    { id: uid(), name:'Big Buck Bunny (Demo)', url:'https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8', logo:'', cat:'movie' },
+    { id: uid(), name:'Apple Stream Test', url:'https://devstreaming-cdn.apple.com/videos/streaming/examples/img_bipbop_adv_example_fmp4/master.m3u8', logo:'', cat:'live' },
+    { id: uid(), name:'Tears of Steel', url:'https://demo.unified-streaming.com/k8s/features/stable/video/tears-of-steel/tears-of-steel.ism/.m3u8', logo:'', cat:'movie' },
+  ];
+  save();
+}
+
+function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
+function save() {
+  localStorage.setItem('sf_channels', JSON.stringify(channels));
+  localStorage.setItem('sf_playlists', JSON.stringify(playlists));
+}
+
+// ═══════════════════════════════════════════════
+//  RENDER CHANNELS
+// ═══════════════════════════════════════════════
+function renderChannels(list) {
+  const container = document.getElementById('channelList');
+  if (!list) list = channels;
+  if (list.length === 0) {
+    container.innerHTML = `<div class="empty-state"><div class="icon">📺</div><p>Sin canales. Agrega uno o importa una lista M3U.</p></div>`;
+    document.getElementById('channelCountText').textContent = '0';
+    return;
+  }
+
+  // Group by category
+  const cats = {};
+  list.forEach(ch => {
+    const c = ch.cat || 'general';
+    if (!cats[c]) cats[c] = [];
+    cats[c].push(ch);
+  });
+
+  const catLabels = { live:'En Vivo', sport:'Deportes', movie:'Películas', news:'Noticias', general:'General' };
+  const catClass = { live:'cat-live', sport:'cat-sport', movie:'cat-movie', news:'cat-news', general:'cat-general' };
+
+  let html = '';
+  const catOrder = ['live','sport','news','movie','general'];
+  catOrder.forEach(cat => {
+    if (!cats[cat] || cats[cat].length === 0) return;
+    html += `<div class="section-label">${catLabels[cat]||cat} <span style="color:var(--accent)">${cats[cat].length}</span></div>`;
+    cats[cat].forEach(ch => {
+      const globalIdx = channels.findIndex(c => c.id === ch.id);
+      const isActive = globalIdx === currentIndex;
+      const logoContent = ch.logo
+        ? `<img src="${ch.logo}" onerror="this.parentNode.textContent='📺'" alt="">`
+        : getEmoji(ch.cat);
+      html += `
+        <div class="channel-item ${isActive?'active':''}" onclick="playChannel(${globalIdx})" tabindex="0" onkeydown="if(event.key==='Enter')playChannel(${globalIdx})">
+          <div class="channel-logo">${logoContent}</div>
+          <div class="channel-info">
+            <div class="channel-name">${esc(ch.name)}</div>
+            <div class="channel-url">${esc(shortUrl(ch.url))}</div>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
+            <span class="cat-badge ${catClass[ch.cat]||'cat-general'}">${catLabels[ch.cat]||ch.cat}</span>
+            ${isActive?'<span class="channel-live"><span class="live-dot"></span>ON</span>':''}
+          </div>
+          <div class="channel-actions">
+            <button class="icon-btn" onclick="event.stopPropagation();removeChannel(${globalIdx})" title="Eliminar">✕</button>
+          </div>
+        </div>`;
+    });
+  });
+
+  container.innerHTML = html;
+  document.getElementById('channelCountText').textContent = channels.length;
+}
+
+function getEmoji(cat) {
+  const m = { live:'📡', sport:'⚽', movie:'🎬', news:'📰', general:'📺' };
+  return m[cat] || '📺';
+}
+function shortUrl(url) {
+  try { const u = new URL(url); return u.hostname + (u.pathname.length > 20 ? u.pathname.slice(0,20)+'...' : u.pathname); }
+  catch { return url.slice(0,35)+(url.length>35?'...':''); }
+}
+function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+// ═══════════════════════════════════════════════
+//  PLAY
+// ═══════════════════════════════════════════════
+function playChannel(index) {
+  const ch = channels[index];
+  if (!ch) return;
+  currentIndex = index;
+
+  const video = document.getElementById('mainPlayer');
+  const overlay = document.getElementById('playerOverlay');
+  const loading = document.getElementById('loadingOverlay');
+
+  overlay.style.display = 'none';
+  video.style.display = 'block';
+  loading.classList.add('show');
+
+  // Destroy previous HLS
+  if (hlsInstance) { hlsInstance.destroy(); hlsInstance = null; }
+
+  const url = ch.url;
+  const isHLS = url.includes('.m3u8') || url.includes('/hls') || url.includes('manifest');
+  const isRTMP = url.startsWith('rtmp://');
+  const isUDP = url.startsWith('udp://');
+
+  if (isHLS && typeof Hls !== 'undefined' && Hls.isSupported()) {
+    hlsInstance = new Hls({ enableWorker: true, lowLatencyMode: true });
+    hlsInstance.loadSource(url);
+    hlsInstance.attachMedia(video);
+    hlsInstance.on(Hls.Events.MANIFEST_PARSED, () => {
+      video.play().catch(()=>{});
+      loading.classList.remove('show');
+      updateNowPlaying(ch);
+    });
+    hlsInstance.on(Hls.Events.ERROR, (e, data) => {
+      if (data.fatal) { loading.classList.remove('show'); showToast('⚠️ Error al cargar el stream', 'error'); }
+    });
+    document.getElementById('formatText').textContent = 'HLS / M3U8';
+  } else if (video.canPlayType('application/vnd.apple.mpegurl') && isHLS) {
+    // Safari native HLS
+    video.src = url;
+    video.play().catch(()=>{});
+    loading.classList.remove('show');
+    updateNowPlaying(ch);
+    document.getElementById('formatText').textContent = 'HLS Nativo';
+  } else if (isRTMP || isUDP) {
+    loading.classList.remove('show');
+    overlay.style.display = 'flex';
+    overlay.innerHTML = `<div class="no-channel"><span class="big-icon">⚠️</span><h2>Formato no soportado</h2><p>Los streams RTMP/UDP requieren una app nativa.<br>Usa un proxy HLS para convertir el stream.</p></div>`;
+    showToast('ℹ️ RTMP/UDP requiere proxy HLS', 'error');
+    return;
+  } else {
+    // Direct play (MP4, etc.)
+    video.src = url;
+    video.play().catch(()=>{});
+    loading.classList.remove('show');
+    updateNowPlaying(ch);
+    document.getElementById('formatText').textContent = 'Directo';
+  }
+
+  document.getElementById('playPauseBtn').textContent = '⏸';
+  document.getElementById('statusText').textContent = 'Reproduciendo';
+  document.getElementById('statusText').style.color = 'var(--green)';
+  document.getElementById('liveBadge').style.display = (ch.cat === 'live') ? 'flex' : 'none';
+  document.getElementById('qualityBadge').textContent = 'HD';
+
+  renderChannels();
+
+  video.onended = () => {
+    document.getElementById('playPauseBtn').textContent = '▶';
+    document.getElementById('statusText').textContent = 'Finalizado';
+  };
+  video.onerror = () => {
+    loading.classList.remove('show');
+    document.getElementById('statusText').textContent = 'Error';
+    document.getElementById('statusText').style.color = 'var(--red)';
+    showToast('❌ No se pudo reproducir el canal', 'error');
+  };
+}
+
+function updateNowPlaying(ch) {
+  document.getElementById('nowPlayingName').textContent = ch.name;
+  document.getElementById('nowPlayingUrl').textContent = shortUrl(ch.url);
+  document.getElementById('nowPlayingLogo').textContent = ch.logo ? '' : getEmoji(ch.cat);
+  if (ch.logo) {
+    document.getElementById('nowPlayingLogo').innerHTML = `<img src="${ch.logo}" style="width:100%;height:100%;object-fit:cover;border-radius:8px" onerror="this.parentNode.textContent='${getEmoji(ch.cat)}'">`;
+  }
+}
+
+function togglePlay() {
+  const v = document.getElementById('mainPlayer');
+  if (v.paused) { v.play(); document.getElementById('playPauseBtn').textContent = '⏸'; }
+  else { v.pause(); document.getElementById('playPauseBtn').textContent = '▶'; }
+}
+
+function prevChannel() {
+  if (channels.length === 0) return;
+  const idx = currentIndex <= 0 ? channels.length - 1 : currentIndex - 1;
+  playChannel(idx);
+}
+function nextChannel() {
+  if (channels.length === 0) return;
+  const idx = currentIndex >= channels.length - 1 ? 0 : currentIndex + 1;
+  playChannel(idx);
+}
+
+function setVolume(v) {
+  document.getElementById('mainPlayer').volume = parseFloat(v);
+}
+
+function toggleFullscreen() {
+  const wrap = document.getElementById('playerWrapper');
+  if (!document.fullscreenElement) wrap.requestFullscreen().catch(()=>{});
+  else document.exitFullscreen();
+}
+
+// ═══════════════════════════════════════════════
+//  ADD / REMOVE
+// ═══════════════════════════════════════════════
+function addChannel() {
+  const name = document.getElementById('addName').value.trim();
+  const url = document.getElementById('addUrl').value.trim();
+  const logo = document.getElementById('addLogo').value.trim();
+  const cat = document.getElementById('addCat').value;
+
+  if (!name || !url) { showToast('⚠️ Nombre y URL son requeridos', 'error'); return; }
+
+  channels.push({ id: uid(), name, url, logo, cat });
+  save(); renderChannels();
+  closeModal('addModal');
+  document.getElementById('addName').value = '';
+  document.getElementById('addUrl').value = '';
+  document.getElementById('addLogo').value = '';
+  showToast(`✅ "${name}" agregado`, 'success');
+}
+
+function removeChannel(index) {
+  const name = channels[index].name;
+  channels.splice(index, 1);
+  if (currentIndex === index) {
+    currentIndex = -1;
+    document.getElementById('mainPlayer').style.display = 'none';
+    document.getElementById('playerOverlay').style.display = 'flex';
+    document.getElementById('playerOverlay').innerHTML = `<div class="no-channel"><span class="big-icon">📺</span><h2>StreamFire IPTV</h2><p>Selecciona un canal para reproducir</p></div>`;
+    if (hlsInstance) { hlsInstance.destroy(); hlsInstance = null; }
+  } else if (currentIndex > index) { currentIndex--; }
+  save(); renderChannels();
+  showToast(`🗑️ "${name}" eliminado`);
+}
+
+// ═══════════════════════════════════════════════
+//  M3U PARSER
+// ═══════════════════════════════════════════════
+function parseM3U(text) {
+  const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+  const result = [];
+  let current = null;
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    if (line.startsWith('#EXTINF')) {
+      current = { id: uid(), name: 'Canal', url: '', logo: '', cat: 'general' };
+      // Parse name
+      const nameMatch = line.match(/,(.+)$/);
+      if (nameMatch) current.name = nameMatch[1].trim();
+      // Parse logo
+      const logoMatch = line.match(/tvg-logo="([^"]+)"/);
+      if (logoMatch) current.logo = logoMatch[1];
+      // Parse group
+      const groupMatch = line.match(/group-title="([^"]+)"/i);
+      if (groupMatch) {
+        const g = groupMatch[1].toLowerCase();
+        if (g.includes('sport') || g.includes('deport')) current.cat = 'sport';
+        else if (g.includes('movie') || g.includes('pelicul') || g.includes('film') || g.includes('cine')) current.cat = 'movie';
+        else if (g.includes('news') || g.includes('notic')) current.cat = 'news';
+        else if (g.includes('live') || g.includes('vivo')) current.cat = 'live';
+      }
+    } else if (line.startsWith('#')) {
+      // Skip other comments
+    } else if (line.startsWith('http') || line.startsWith('rtmp') || line.startsWith('rtsp') || line.startsWith('udp')) {
+      if (current) {
+        current.url = line;
+        result.push(current);
+        current = null;
+      }
+    }
+  }
+  return result;
+}
+
+async function importM3U() {
+  const urlInput = document.getElementById('importUrl').value.trim();
+  const textInput = document.getElementById('importText').value.trim();
+
+  if (urlInput) {
+    showToast('⏳ Cargando lista...', '');
+    try {
+      const proxy = `https://api.allorigins.win/raw?url=${encodeURIComponent(urlInput)}`;
+      const res = await fetch(proxy);
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const text = await res.text();
+      const parsed = parseM3U(text);
+      if (parsed.length === 0) throw new Error('No se encontraron canales');
+      channels.push(...parsed);
+      save(); renderChannels();
+      closeModal('importModal');
+      showToast(`✅ ${parsed.length} canales importados`, 'success');
+    } catch(e) {
+      showToast('❌ Error al cargar: ' + e.message, 'error');
+    }
+    return;
+  }
+
+  if (textInput) {
+    const parsed = parseM3U(textInput);
+    if (parsed.length === 0) { showToast('⚠️ No se encontraron canales en el texto', 'error'); return; }
+    channels.push(...parsed);
+    save(); renderChannels();
+    closeModal('importModal');
+    showToast(`✅ ${parsed.length} canales importados`, 'success');
+    return;
+  }
+
+  showToast('⚠️ Ingresa una URL o pega el contenido M3U', 'error');
+}
+
+function handleFile(e) {
+  const file = e.target.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    document.getElementById('importText').value = ev.target.result;
+    showToast('📁 Archivo cargado, presiona Importar', '');
+  };
+  reader.readAsText(file);
+}
+
+function handleDrop(e) {
+  e.preventDefault();
+  document.getElementById('dropZone').classList.remove('drag');
+  const file = e.dataTransfer.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    document.getElementById('importText').value = ev.target.result;
+    showToast('📁 Archivo cargado, presiona Importar', '');
+  };
+  reader.readAsText(file);
+}
+
+// ═══════════════════════════════════════════════
+//  PLAYLISTS
+// ═══════════════════════════════════════════════
+function addPlaylist() {
+  const name = document.getElementById('plName').value.trim() || 'Lista ' + (playlists.length+1);
+  const url = document.getElementById('plUrl').value.trim();
+  if (!url) { showToast('⚠️ Ingresa la URL de la lista', 'error'); return; }
+  playlists.push({ id: uid(), name, url });
+  save(); renderPlaylists();
+  document.getElementById('plName').value = '';
+  document.getElementById('plUrl').value = '';
+  showToast(`✅ Lista "${name}" guardada`, 'success');
+}
+
+function renderPlaylists() {
+  const c = document.getElementById('playlistList');
+  if (playlists.length === 0) {
+    c.innerHTML = `<div class="empty-state"><div class="icon">📋</div><p>Sin listas guardadas.</p></div>`;
+    return;
+  }
+  c.innerHTML = playlists.map((pl,i) => `
+    <div class="channel-item">
+      <div class="channel-logo">📋</div>
+      <div class="channel-info">
+        <div class="channel-name">${esc(pl.name)}</div>
+        <div class="channel-url">${esc(shortUrl(pl.url))}</div>
+      </div>
+      <div class="channel-actions" style="opacity:1">
+        <button class="btn btn-sm btn-secondary" onclick="loadPlaylist(${i})">▶ Cargar</button>
+        <button class="icon-btn" onclick="removePlaylist(${i})">✕</button>
+      </div>
+    </div>`).join('');
+}
+
+async function loadPlaylist(i) {
+  const pl = playlists[i];
+  showToast('⏳ Cargando ' + pl.name + '...', '');
+  try {
+    const proxy = `https://api.allorigins.win/raw?url=${encodeURIComponent(pl.url)}`;
+    const res = await fetch(proxy);
+    const text = await res.text();
+    const parsed = parseM3U(text);
+    channels.push(...parsed);
+    save(); renderChannels();
+    showToast(`✅ ${parsed.length} canales de "${pl.name}"`, 'success');
+    switchTab('channels', document.querySelector('.sidebar-tab'));
+  } catch(e) {
+    showToast('❌ Error: ' + e.message, 'error');
+  }
+}
+
+function removePlaylist(i) {
+  playlists.splice(i,1);
+  save(); renderPlaylists();
+  showToast('🗑️ Lista eliminada');
+}
+
+// ═══════════════════════════════════════════════
+//  SEARCH
+// ═══════════════════════════════════════════════
+function filterChannels() {
+  const q = document.getElementById('searchInput').value.toLowerCase();
+  if (!q) { renderChannels(); return; }
+  renderChannels(channels.filter(ch => ch.name.toLowerCase().includes(q) || ch.url.toLowerCase().includes(q)));
+}
+
+// ═══════════════════════════════════════════════
+//  MODAL
+// ═══════════════════════════════════════════════
+function openModal(id) { document.getElementById(id).classList.add('show'); }
+function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+document.querySelectorAll('.modal-overlay').forEach(m => {
+  m.addEventListener('click', e => { if (e.target === m) m.classList.remove('show'); });
+});
+
+function setType(type, btn) {
+  currentType = type;
+  document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const hints = { channel:'http://servidor.com/canal', stream:'rtmp://servidor.com/live/stream', network:'udp://@239.1.1.1:1234' };
+  document.getElementById('addUrl').placeholder = hints[type] || 'http://';
+}
+
+// ═══════════════════════════════════════════════
+//  TABS
+// ═══════════════════════════════════════════════
+function switchTab(name, btn) {
+  document.querySelectorAll('.sidebar-tab').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-pane').forEach(p => { p.style.display = 'none'; p.classList.remove('active'); });
+  if (btn) btn.classList.add('active');
+  else document.querySelectorAll('.sidebar-tab')[['channels','playlists','settings'].indexOf(name)]?.classList.add('active');
+  const pane = document.getElementById('tab-' + name);
+  if (pane) { pane.style.display = (name==='channels') ? 'flex' : 'block'; pane.classList.add('active'); }
+  if (name === 'playlists') renderPlaylists();
+}
+
+// ═══════════════════════════════════════════════
+//  TOAST
+// ═══════════════════════════════════════════════
+let toastTimer;
+function showToast(msg, type) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show' + (type ? ' ' + type : '');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 3200);
+}
+
+// ═══════════════════════════════════════════════
+//  MISC
+// ═══════════════════════════════════════════════
+function clearAll() {
+  if (!confirm('¿Borrar todos los canales y listas?')) return;
+  channels = []; playlists = [];
+  currentIndex = -1;
+  if (hlsInstance) { hlsInstance.destroy(); hlsInstance = null; }
+  const v = document.getElementById('mainPlayer');
+  v.pause(); v.src = ''; v.style.display = 'none';
+  document.getElementById('playerOverlay').style.display = 'flex';
+  document.getElementById('playerOverlay').innerHTML = `<div class="no-channel"><span class="big-icon">📺</span><h2>StreamFire IPTV</h2><p>Agrega un canal o importa una lista M3U</p></div>`;
+  save(); renderChannels(); renderPlaylists();
+  showToast('🗑️ Datos borrados', '');
+}
+
+// ── KEYBOARD NAVIGATION (FireStick D-pad) ──
+document.addEventListener('keydown', e => {
+  switch(e.key) {
+    case 'ArrowRight': case 'MediaPlay': togglePlay(); break;
+    case 'ArrowUp': prevChannel(); break;
+    case 'ArrowDown': nextChannel(); break;
+    case 'f': case 'F': toggleFullscreen(); break;
+  }
+});
+
+// ── INIT ──
+renderChannels();
+
+// Load HLS.js dynamically
+const script = document.createElement('script');
+script.src = 'https://cdnjs.cloudflare.com/ajax/libs/hls.js/1.5.7/hls.min.js';
+script.onload = () => console.log('HLS.js ready');
+document.head.appendChild(script);
+</script>
+</body>
+</html>
